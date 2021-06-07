@@ -15,15 +15,36 @@ app.get("/", (request, response) => {
   response.json({ info: "Node.js, Express, and Postgres API" });
 });
 
-app.get("/users", db.getUsers);
+const authenticateToken = (req, res, next) => {
+  const token = req.headers["token"];
+  console.log("token", typeof token);
+  // Status: Unauthorised
+  if (!token)
+    return res.json({
+      responsemessage: "please provide token",
+      responsecode: "401",
+    });
 
-app.get("/users/:id", db.getUserById);
+  if (token != "subho")
+    return res.json({
+      responsemessage: "invalid token",
+      responsecode: "401",
+    });
 
-app.post("/users", db.createUser);
+  if (token == "subho") {
+    next();
+  }
+};
 
-app.put("/users/:id", db.updateUser);
+app.get("/getUsers/", authenticateToken, db.getUsers);
 
-app.delete("/users/:id", db.deleteUser);
+app.get("/getUsersById/:id", db.getUserById);
+
+app.post("/createUser/", db.createUser);
+
+app.put("/updateUser/", db.updateUser);
+
+app.delete("/deleteUser/:id", db.deleteUser);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

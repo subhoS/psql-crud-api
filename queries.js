@@ -6,12 +6,25 @@ const pool = new Pool({
   password: "password",
   port: 5432,
 });
+
 const getUsers = (request, response) => {
   pool.query("SELECT * FROM users ORDER BY id ASC", (error, results) => {
     if (error) {
       throw error;
     }
-    response.status(200).json(results.rows);
+    let object = {
+      responsecode: "200",
+      responsemessage: "record file sucessfull",
+      result: results.rows,
+    };
+
+    if (results.rows.length > 0) {
+      response.status(200).json(object);
+    } else {
+      object.responsemessage = "nodata found";
+      object.responsecode = "400";
+      response.status(200).json(object);
+    }
   });
 };
 
@@ -22,7 +35,19 @@ const getUserById = (request, response) => {
     if (error) {
       throw error;
     }
-    response.status(200).json(results.rows);
+    let object = {
+      responsecode: "200",
+      responsemessage: "record file sucessfull",
+      result: results.rows,
+    };
+
+    if (results.rows.length > 0) {
+      response.status(200).json(object);
+    } else {
+      object.responsemessage = "nodata found";
+      object.responsecode = "400";
+      response.status(200).json(object);
+    }
   });
 };
 
@@ -36,15 +61,33 @@ const createUser = (request, response) => {
       if (error) {
         throw error;
       }
-      response.status(201).send(`User added with ID: ${result.insertId}`);
+
+      pool.query(
+        "Select * from users where id=(select max(id) from users)",
+        (err, data) => {
+          if (err) {
+            throw err;
+          }
+          let object = {
+            responsecode: "200",
+            responsemessage: "reg sucessfull",
+            result: data.rows,
+          };
+          if (data.rows.length > 0) {
+            response.status(200).json(object);
+          } else {
+            object.responsemessage = "Database related error";
+            object.responsecode = "400";
+            response.status(200).json(object);
+          }
+        }
+      );
     }
   );
 };
 
 const updateUser = (request, response) => {
-  const id = parseInt(request.params.id);
-  const { name, email } = request.body;
-
+  const { id, name, email } = request.body;
   pool.query(
     "UPDATE users SET name = $1, email = $2 WHERE id = $3",
     [name, email, id],
@@ -52,7 +95,23 @@ const updateUser = (request, response) => {
       if (error) {
         throw error;
       }
-      response.status(200).send(`User modified with ID: ${id}`);
+      pool.query(`Select * from users where id=${id}`, (err, data) => {
+        if (err) {
+          throw err;
+        }
+        let object = {
+          responsecode: "200",
+          responsemessage: "reg sucessfull",
+          result: data.rows,
+        };
+        if (data.rows.length > 0) {
+          response.status(200).json(object);
+        } else {
+          object.responsemessage = "Database related error";
+          object.responsecode = "400";
+          response.status(200).json(object);
+        }
+      });
     }
   );
 };
@@ -64,7 +123,11 @@ const deleteUser = (request, response) => {
     if (error) {
       throw error;
     }
-    response.status(200).send(`User deleted with ID: ${id}`);
+    let object = {
+      responsecode: "200",
+      responsemessage: "record deleted sucessfully",
+    };
+    response.status(200).json(object);
   });
 };
 
